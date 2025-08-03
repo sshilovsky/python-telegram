@@ -577,7 +577,7 @@ class Telegram:
     def add_message_handler(self, func: Callable) -> None:
         self.add_update_handler(MESSAGE_HANDLER_TYPE, func)
 
-    def add_update_handler(self, handler_type: str, func: Optional[Callable]) -> Callable:
+    def add_update_handler(self, handler_type: str, func: Optional[Callable] = None) -> Callable:
         if func is None:
             # decorator-style
             return lambda func: self.add_update_handler(handler_type, func)
