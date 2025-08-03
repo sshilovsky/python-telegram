@@ -41,7 +41,10 @@ class SimpleWorker(BaseWorker):
             except Empty:
                 continue
 
-            handler(update)
+            try:
+                handler(update)
+            except Exception as ex:
+                logger.exception(ex)
             self._queue.task_done()
 
     def stop(self) -> None:
