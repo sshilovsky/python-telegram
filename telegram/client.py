@@ -26,7 +26,7 @@ from collections import defaultdict
 import enum
 
 from telegram import VERSION
-from telegram.utils import AsyncResult
+from telegram.utils import AsyncResult, TelegramError
 from telegram.tdjson import TDJson
 from telegram.worker import BaseWorker, SimpleWorker
 from telegram.text import Element
@@ -642,7 +642,7 @@ class Telegram:
             result.wait(raise_exc=True)
 
             if result.update is None:
-                raise RuntimeError("Something wrong, the result update is None")
+                raise TelegramError("Something wrong, the result update is None")
 
             if result.id == "getAuthorizationState":
                 authorization_state = result.update["@type"]
@@ -768,7 +768,7 @@ class Telegram:
         elif self.bot_token:
             return self._send_bot_token()
         else:
-            raise RuntimeError("Unknown mode: both bot_token and phone are None")
+            raise TelegramError("Unknown mode: both bot_token and phone are None")
 
     def _send_phone_number(self) -> AsyncResult:
         logger.info("Sending phone number")
@@ -824,7 +824,7 @@ class Telegram:
          - AuthorizationState. The called have to call `login` to continue the login process.
 
         Raises:
-         - RuntimeError if the login failed
+         - TelegramError if the login failed
         """
         result = self._send_telegram_code(code)
         self.authorization_state = self._wait_authorization_result(result)
@@ -852,7 +852,7 @@ class Telegram:
          - AuthorizationState. The called have to call `login` to continue the login process.
 
         Raises:
-          - RuntimeError if the login failed
+          - TelegramError if the login failed
 
         """
         result = self._send_password(password)
@@ -890,7 +890,7 @@ class Telegram:
          - AuthorizationState. The called have to call `login` to continue the login process.
 
         Raises:
-          - RuntimeError if the login failed
+          - TelegramError if the login failed
 
         """
         result = self._register_user(first, last)

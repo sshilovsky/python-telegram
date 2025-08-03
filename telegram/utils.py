@@ -10,6 +10,12 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
+class TelegramError(RuntimeError):
+    def __init__(self, *args, error_info=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.error_info = error_info or {}
+
+
 class AsyncResult:
     """
     tdlib is asynchronous, and this class helps you get results back.
@@ -42,7 +48,12 @@ class AsyncResult:
         if result is False:
             raise TimeoutError()
         if raise_exc and self.error:
-            raise RuntimeError(f"Telegram error: {self.error_info}")
+            self.raise_exception()
+
+    def raise_exception(self):
+        raise TelegramError(
+            f"Telegram error: {self.error_info}", error_info=self.error_info
+        )
 
     def parse_update(self, update: Dict[Any, Any]) -> bool:
         update_type = update.get("@type")
