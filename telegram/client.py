@@ -75,6 +75,7 @@ class Telegram:
         proxy_port: int = 0,
         proxy_type: Optional[Dict[str, str]] = None,
         use_secret_chats: bool = True,
+        enable_handlers: bool = True,
     ) -> None:
         """
         Args:
@@ -142,7 +143,7 @@ class Telegram:
         self._update_handlers: DefaultDict[str, List[Callable]] = defaultdict(list)
 
         self._tdjson = TDJson(library_path=library_path, verbosity=tdlib_verbosity)
-        self._run()
+        self._run(enable_handlers=enable_handlers)
 
         if login:
             self.login()
@@ -514,11 +515,15 @@ class Telegram:
 
         return self._send_data(data, block=block)
 
-    def _run(self) -> None:
+    def _run(self, enable_handlers: bool = True) -> None:
         self._td_listener = threading.Thread(target=self._listen_to_td)
         self._td_listener.daemon = True
         self._td_listener.start()
 
+        if enable_handlers:
+            self.enable_handlers()
+
+    def enable_handlers(self):
         self.worker.run()
 
     def _listen_to_td(self) -> None:
