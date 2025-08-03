@@ -1,6 +1,7 @@
 import uuid
 import threading
 import logging
+import re
 from typing import TYPE_CHECKING, Any, Dict, Optional
 
 if TYPE_CHECKING:
@@ -11,9 +12,29 @@ logger = logging.getLogger(__name__)
 
 
 class TelegramError(RuntimeError):
+    @classmethod
+    def is_applicable(cls, async_result):
+        return async_result.error
+
     def __init__(self, *args, error_info=None, **kwargs):
+        if len(args) == 0:
+            message = f"Telegram error: {error_info}"
+            args = [message]
         super().__init__(*args, **kwargs)
         self.error_info = error_info or {}
+
+RE_MESSAGE_429 = re.compile(r"Too Many Requests: retry after (\d+)")
+
+class TooManyRequestsError(TelegramError):
+    @classmethod
+    def is_applicable(cls, async_result):
+        return async_result.error and async_result.error_info["code"] == 429
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        m = RE_MESSAGE_429.fullmatch(self.error_info["message"])
+        self.retry_after = int(m.group(1)) if m is not None else None
 
 
 class AsyncResult:
@@ -47,13 +68,13 @@ class AsyncResult:
         result = self._ready.wait(timeout=timeout)
         if result is False:
             raise TimeoutError()
-        if raise_exc and self.error:
+        if raise_exc:
             self.raise_exception()
 
     def raise_exception(self):
-        raise TelegramError(
-            f"Telegram error: {self.error_info}", error_info=self.error_info
-        )
+        for exception_class in [TooManyRequestsError, TelegramError]:
+            if exception_class.is_applicable(self):
+                raise exception_class(error_info=self.error_info)
 
     def parse_update(self, update: Dict[Any, Any]) -> bool:
         update_type = update.get("@type")
