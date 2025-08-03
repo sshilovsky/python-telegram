@@ -46,4 +46,7 @@ class SimpleWorker(BaseWorker):
 
     def stop(self) -> None:
         self._is_enabled = False
-        self._thread.join()
+        try:
+            self._thread.join()
+        except RuntimeError as ex:
+            logger.exception(ex)
