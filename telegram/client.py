@@ -137,7 +137,7 @@ class Telegram:
 
         if not worker:
             worker = SimpleWorker
-        self.worker: BaseWorker = worker(queue=self._workers_queue)
+        self.worker: BaseWorker = worker(queue=self._workers_queue, tg=self)
 
         self._results: Dict[str, AsyncResult] = {}
         self._update_handlers: DefaultDict[str, List[Callable]] = defaultdict(list)
@@ -562,10 +562,7 @@ class Telegram:
         return async_result
 
     def _run_handlers(self, update: Dict[Any, Any]) -> None:
-        update_type: str = update.get("@type", "unknown")
-
-        for handler in self._update_handlers[update_type]:
-            self._workers_queue.put((handler, update), timeout=self._queue_put_timeout)
+        self._workers_queue.put(update, timeout=self._queue_put_timeout)
 
     def remove_update_handler(self, handler_type: str, func: Callable) -> None:
         """

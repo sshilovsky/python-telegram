@@ -13,7 +13,8 @@ class BaseWorker:
     and calling handler functions
     """
 
-    def __init__(self, queue: Queue):
+    def __init__(self, queue: Queue, tg):
+        self.tg = tg
         self._is_enabled = True
         self._queue = queue
 
@@ -35,17 +36,23 @@ class SimpleWorker(BaseWorker):
     def _run_thread(self) -> None:
         logger.info("[SimpleWorker] started")
 
-        while self._is_enabled:
+        while True:
             try:
-                handler, update = self._queue.get(timeout=0.5)
+                update = self._queue.get(timeout=0.5)
             except Empty:
-                continue
+                if self._is_enabled:
+                    continue
+                break
 
             try:
-                handler(update)
-            except Exception as ex:
-                logger.exception(ex)
-            self._queue.task_done()
+                update_type: str = update.get('@type', 'unknown')
+                for handler in self.tg._update_handlers[update_type]:
+                    try:
+                        handler(update)
+                    except Exception as ex:
+                        logger.exception(ex)
+            finally:
+                self._queue.task_done()
 
     def stop(self) -> None:
         self._is_enabled = False
