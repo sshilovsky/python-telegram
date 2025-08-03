@@ -46,6 +46,10 @@ class SimpleWorker(BaseWorker):
 
             try:
                 update_type: str = update.get('@type', 'unknown')
+                if update_type == "error":
+                    print("error:", update)
+                else:
+                    print("update:", update_type)
                 for handler in self.tg._update_handlers[update_type]:
                     try:
                         handler(update)
