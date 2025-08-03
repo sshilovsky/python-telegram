@@ -669,6 +669,8 @@ class Telegram:
          - AuthorizationState.WAIT_CODE if a telegram code is required.
            The caller should ask the telegram code
            to the end user then call send_code(code)
+         - Authorization.WAIT_PHONE_NUMBER. The caller should send user phone
+           number or bot token
          - AuthorizationState.WAIT_PASSWORD if a telegram password is required.
            The caller should ask the telegram password
            to the end user and then call send_password(password)
@@ -692,6 +694,7 @@ class Telegram:
         }
 
         blocking_actions = (
+            AuthorizationState.WAIT_PHONE_NUMBER,
             AuthorizationState.WAIT_CODE,
             AuthorizationState.WAIT_PASSWORD,
             AuthorizationState.WAIT_REGISTRATION,
@@ -804,6 +807,11 @@ class Telegram:
         data = {"@type": "checkAuthenticationCode", "code": str(code)}
 
         return self._send_data(data, result_id="updateAuthorizationState")
+
+    def send_phone_number_or_bot_token(self):
+        result = self._send_phone_number_or_bot_token()
+        self.authorization_state = self._wait_authorization_result(result)
+        return self.authorization_state
 
     def send_code(self, code: str) -> AuthorizationState:
         """
