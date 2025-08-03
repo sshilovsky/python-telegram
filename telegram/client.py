@@ -506,6 +506,7 @@ class Telegram:
             method_name: Name of the method
             params: parameters
         """
+        logger.info("call_method {} {}".format(method_name, params or {}))
         data = {"@type": method_name}
 
         if params:
